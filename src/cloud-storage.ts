@@ -24,19 +24,26 @@ export function setupDirectories() {
  * @param processedVideoName - The name of the file to convert to {@link localProcessedVideoPath}.
  * @returns A promise that resolves when the video has been converted.
  */
+
+// todo... fix the resizing logic lmao
 export function convertVideo(rawVideoName: string, processedVideoName: string) {
   return new Promise<void>((resolve, reject) => {
-    ffmpeg(`${localRawVideoPath}/${rawVideoName}`)
-      .outputOptions("-vf", "scale=-1:360") // 360p
-      .on("end", function () {
-        console.log("Processing finished successfully");
-        resolve();
-      })
-      .on("error", function (err: any) {
-        console.log("An error occurred: " + err.message);
-        reject(err);
-      })
-      .save(`${localProcessedVideoPath}/${processedVideoName}`);
+
+    ffmpeg(`${localRawVideoPath}/${rawVideoName}`).ffprobe((err, data) => {
+      const height = data.streams[0].height || 0;
+      let command = ffmpeg(`${localRawVideoPath}/${rawVideoName}`)
+        .on('end', () => {
+          resolve();
+        })
+        .on('error', (e: any) => {
+          console.log(`An Error occured: ${e.message}`)
+          reject(e);
+        });
+      if (height > 720) {
+        command.size('?x720'); // resize to 720p if larger
+      }
+      command.save(`${localProcessedVideoPath}/${processedVideoName}`);
+    })
   });
 }
 

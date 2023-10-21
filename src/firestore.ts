@@ -32,10 +32,14 @@ async function getVideo(videoId: string) {
 }
 
 export function setVideo(videoId: string, video: Video) {
+  console.log('*** INSIDE FIRESTORE TS SET VIDEO ****')
+  console.log('video: ', video)
+
   return firestore
     .collection(videoCollectionId)
     .doc(videoId)
     .set(video, { merge: true })
+
 }
 
 export async function isVideoNew(videoId: string) {
