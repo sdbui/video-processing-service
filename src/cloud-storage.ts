@@ -32,6 +32,8 @@ export function convertVideo(rawVideoName: string, processedVideoName: string) {
     ffmpeg(`${localRawVideoPath}/${rawVideoName}`).ffprobe((err, data) => {
       const height = data.streams[0].height || 0;
       let command = ffmpeg(`${localRawVideoPath}/${rawVideoName}`)
+        .videoCodec('libx264')
+        .format('mp4')
         .on('end', () => {
           resolve();
         })
