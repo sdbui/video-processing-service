@@ -33,7 +33,7 @@ export function convertVideo(rawVideoName: string, processedVideoName: string) {
       const height = data.streams[0].height || 0;
       let command = ffmpeg(`${localRawVideoPath}/${rawVideoName}`)
         .videoCodec('libx264')
-        .format('mp4')
+        .outputOptions('-vf', 'format=yuv420p')
         .on('end', () => {
           resolve();
         })
