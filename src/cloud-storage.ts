@@ -6,9 +6,11 @@ const storage = new Storage();
 
 const rawVideoBucketName = "buitube-raw-videos";
 const processedVideoBucketName = "buitube-processed-videos";
+const thumbnailsBucketName = "buitube-video-thumbnails";
 
 const localRawVideoPath = "./raw-videos";
 const localProcessedVideoPath = "./processed-videos";
+const localThumbnailPath = './thumbnails'
 
 /**
  * Creates the local directories for raw and processed videos.
@@ -16,6 +18,34 @@ const localProcessedVideoPath = "./processed-videos";
 export function setupDirectories() {
   ensureDirectoryExistence(localRawVideoPath);
   ensureDirectoryExistence(localProcessedVideoPath);
+  ensureDirectoryExistence(localThumbnailPath);
+}
+
+
+export function makeThumbnail (videoName: string, thumbnailName: string) {
+  return new Promise<void>((resolve, reject) => {
+    ffmpeg(`${localRawVideoPath}/${videoName}`)
+    .outputOptions('-ss', '00:00:03')
+    .outputOptions('-frames:v 1')
+    .output(`${localThumbnailPath}/${thumbnailName}`)
+    .on('end', resolve)
+    .on('error', reject)
+    .run()
+  });
+}
+
+export async function uploadThumbnail (thumbnailName: string) {
+  const thumbnailBucket = storage.bucket(thumbnailsBucketName);
+  await thumbnailBucket
+    .upload(`${localThumbnailPath}/${thumbnailName}`, {
+      destination: thumbnailName
+    });
+    console.log(
+      `${localThumbnailPath}/${thumbnailName} uploaded to gs://${thumbnailsBucketName}/${thumbnailName}.`
+    );
+
+    // Set the video to be publicly readable
+    await thumbnailBucket.file(thumbnailName).makePublic();
 }
 
 
@@ -24,7 +54,6 @@ export function setupDirectories() {
  * @param processedVideoName - The name of the file to convert to {@link localProcessedVideoPath}.
  * @returns A promise that resolves when the video has been converted.
  */
-
 // todo... fix the resizing logic lmao
 export function convertVideo(rawVideoName: string, processedVideoName: string) {
   return new Promise<void>((resolve, reject) => {
@@ -109,6 +138,17 @@ export function deleteRawVideo(fileName: string) {
 */
 export function deleteProcessedVideo(fileName: string) {
   return deleteFile(`${localProcessedVideoPath}/${fileName}`);
+}
+
+
+/**
+ * 
+ * @param fileName The name of the file to delete from the
+ * {@link localThumbnailPath} folder
+ * @returns a promise that resolves when file is deleted
+ */
+export function deleteThumbnail(fileName: string) {
+  return deleteFile(`${localThumbnailPath}/${fileName}`);
 }
 
 

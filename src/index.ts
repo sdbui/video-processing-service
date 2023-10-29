@@ -6,7 +6,10 @@ import {
   deleteRawVideo,
   deleteProcessedVideo,
   convertVideo,
-  setupDirectories
+  setupDirectories,
+  makeThumbnail,
+  uploadThumbnail,
+  deleteThumbnail
 } from './cloud-storage';
 import { isVideoNew, setVideo } from './firestore';
 
@@ -34,8 +37,8 @@ app.post('/process-video', async (req, res) => {
 
   const inputFileName = data.name;
   const outputFileName = `processed-${inputFileName}`;
-
   const videoId = inputFileName.split('.')[0];
+  const thumbnailName = `${videoId}.png`;
   if (!isVideoNew(videoId)) {
     return res.status(400).send('Bad Request: Video already processing or processed');
   } else {
@@ -48,6 +51,15 @@ app.post('/process-video', async (req, res) => {
   // Download the raw video from Cloud Storage
   await downloadRawVideo(inputFileName);
 
+  // make a thumbnail
+  try {
+    await makeThumbnail(inputFileName, thumbnailName);
+    await uploadThumbnail(thumbnailName);
+    await deleteThumbnail(thumbnailName);
+  } catch (e) {
+    console.log(`Could not make thumbnail: ${e}`)
+    await deleteThumbnail(thumbnailName);
+  }
   // Process the video into 360p
   try { 
     await convertVideo(inputFileName, outputFileName)
@@ -66,12 +78,14 @@ app.post('/process-video', async (req, res) => {
   console.log('attempting to set video with filename:  ', outputFileName)
   await setVideo(videoId, {
     status: 'processed',
-    filename: outputFileName
+    filename: outputFileName,
+    thumbnail: thumbnailName
   });
 
   await Promise.all([
     deleteRawVideo(inputFileName),
-    deleteProcessedVideo(outputFileName)
+    deleteProcessedVideo(outputFileName),
+    deleteThumbnail(thumbnailName)
   ]);
 
   return res.status(200).send('Processing finished successfully');

@@ -8,7 +8,8 @@
     "build": "tsc",
     "serve": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dockerbuild": "docker build -t us-west2-docker.pkg.dev/buitube/video-processing-repo/video-processing-service . --platform linux/amd64"
+    "dockerbuild": "docker build -t us-west2-docker.pkg.dev/buitube/video-processing-repo/video-processing-service . --platform linux/amd64",
+    "dockerpush": "docker push us-west2-docker.pkg.dev/buitube/video-processing-repo/video-processing-service"
   },
   "repository": {
     "type": "git",
